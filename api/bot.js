@@ -4,15 +4,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const message = req.body?.message;
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const message = body?.message;
+
     if (!message || !message.text) {
       return res.status(200).send("OK");
     }
 
     const chatId = message.chat.id;
-    const userText = message.text;
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const userText = message.text.trim();
+    const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+    const geminiKey = process.env.GEMINI_API_KEY?.trim();
+
+    if (!botToken) {
+      console.error("Missing TELEGRAM_BOT_TOKEN");
+      return res.status(200).send("OK");
+    }
 
     if (userText === "/start") {
       await sendTelegramMessage(
@@ -20,6 +27,11 @@ export default async function handler(req, res) {
         chatId,
         "Привет! Это Arch Navigator KZ — помощник по строительным нормам и архитектуре. Напиши свой вопрос или параметры объекта."
       );
+      return res.status(200).send("OK");
+    }
+
+    if (!geminiKey) {
+      await sendTelegramMessage(botToken, chatId, "Не настроен GEMINI_API_KEY.");
       return res.status(200).send("OK");
     }
 
@@ -56,7 +68,7 @@ export default async function handler(req, res) {
 }
 
 async function sendTelegramMessage(token, chatId, text) {
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  const tgRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -64,4 +76,9 @@ async function sendTelegramMessage(token, chatId, text) {
       text
     })
   });
+
+  const tgData = await tgRes.text();
+  if (!tgRes.ok) {
+    console.error("Telegram sendMessage failed:", tgRes.status, tgData);
+  }
 }
