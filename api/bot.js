@@ -1,4 +1,4 @@
-const MODEL_NAME = "gemini-2.5-flash";
+const MODEL_NAME = "gemini-3.5-flash-lite";
 const MAX_INPUT_CHARS = 3000;
 const MAX_HISTORY_MSGS = 10; // 5 пар вопрос-ответ
 const DEFAULT_LANG = "ru";
